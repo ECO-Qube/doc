@@ -1,0 +1,19 @@
+build pdf:
+  image:
+    name: pandoc/ubuntu-latex
+    entrypoint: [""]
+  only:
+    - main
+  before_script:
+    - apt-get update
+    - DEBIAN_FRONTEND=noninteractive apt-get install --assume-yes --no-install-recommends curl pandoc texlive-latex-base texlive-fonts-recommended texlive-extra-utils texlive-latex-extra
+  script:
+    # create svgs from pumls
+    - for f in *.puml; do
+        curl -s https://kroki.helio.dev/plantuml/svg --data-binary "@${f}" -o "dist/$(echo ${f//puml/svg} | tr -d '[:space:]')";
+      done
+    # Runs pandoc on all .md files in the dist folder and outputs them as PDF
+    - (cd dist && for f in *.md; do pandoc $f -o $(echo ${f//md/pdf}); done)
+  artifacts:
+    paths:
+      - dist/*.pdf

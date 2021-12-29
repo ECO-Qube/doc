@@ -1,0 +1,69 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+AddElementTag("supporting services", $bgColor="grey", $fontColor="white", $borderColor="darkgrey")
+AddElementTag("micro service", $shape=EightSidedShape(), $bgColor="CornflowerBlue", $fontColor="white")
+AddElementTag("storage", $shape=RoundedBoxShape(), $bgColor="lightSkyBlue", $fontColor="white")
+AddElementTag("apiClient", $bgColor="#08267a", $fontColor="white", $borderColor="#073B6F")
+
+AddElementTag("infrastructure", $bgColor="grey", $fontColor="white", $borderColor="darkgrey")
+
+Person(buildingOwner, "Building Owner", "Building Owner")
+
+Person(energyOperator, "Energy Management", "Optimises the energy consumption and transition")
+
+Container(ems,"EMS / BIMS", "Energy Management System of the building")
+ContainerDb(dataPlatform, "ECO-Qube data platform", "Data Platform for all metrics data etc.")
+
+Container(workflowService, "Workflow service", "Go, gRPC", "Management of workflows", $tags="micro service")
+
+ContainerQueue_Ext(argoEvents, "Argo Events", "Event queueing system", $tags="supporting services")
+
+System_Boundary(ecoQube, "ECO-Qube data center management") {
+    Container(zonalHeatManagementService, "Zonal Heat Management Service (ZHM)", "Go, gRPC", "Allows grouping of related objects", $tags="micro service")
+    Container(userWebInterface, "Reports achieved zhm optimisation and metrics and lets users control the ZHM system", "Go, gRPC", "Report Service")
+    ContainerDb(zhmDb, "Database for zonal heat management", "PostgreSQL", "Stores historized target for load curve per zone and summarized reports", $tags="storage")
+
+    Container(ai, "AI", "Optimises Scheduling Decision Algorithm")
+
+    Container(provider, "Provider", "Provisions and Maintains Zonal Clusters")
+    Container(schedulerService, "Scheduler Service", "Permanently reconciles should/is of the clusters and adjusts workload scheduling accordingly", $tags="micro service")
+    ContainerDb(jobQueue, "Job Queue", "Queue of Jobs to be executed")
+}
+
+System(authSystem, "Authn & Authz", "Authentication & Authorization", $tags="supporting services")
+System(kubernetes, "Kubernetes", "Workload scheduling and deployment", $tags="supporting services")
+System(openstack, "OpenStack", "Cluster Provisioning and VM provisioning", $tags="supporting services")
+System(dcim, "DCIM", "Data Center Management System", $tags="supporting services")
+
+Rel(buildingOwner, userWebInterface, "Configures the ZHM")
+Rel(energyOperator, userWebInterface, "Gets reporting and optimises algorithms of the ZHM")
+
+Rel(dcim, dataPlatform, "Reports Usage", "Prometheus")
+Rel(dcim, schedulerService, "Reports Realtime Sensor Data", "<tbd>")
+Rel(argoEvents, workflowService, "pushes resources updates using", "gRPC")
+
+Rel(userWebInterface, zonalHeatManagementService, "Sets congig")
+Rel(dataPlatform, userWebInterface, "Data Source for reports")
+Rel(userWebInterface, authSystem, "Authn & Authz")
+
+Rel(zonalHeatManagementService, zhmDb, "Stores Cluster Config and report summaries")
+Rel(zonalHeatManagementService, provider, "Instructs to creating clusters", "gRPC")
+Rel(zonalHeatManagementService, schedulerService, "Controls the target workload metrics")
+Rel(ems, zonalHeatManagementService, "Updates Target Load Curve")
+
+Rel(dataPlatform, ai, "Data for optimisation")
+Rel(ai,schedulerService, "Decisions")
+Rel(ai, zonalHeatManagementService, "Decisions")
+
+Rel(schedulerService, kubernetes, "Adjusts Workloads by means of autoscaling", "REST")
+Rel(argoEvents, schedulerService, "Updates Workload Status")
+Rel(kubernetes, argoEvents, "Emits Workload Update Events")
+Rel(jobQueue, schedulerService, "Provides Jobs to be executed")
+Rel(schedulerService, workflowService, "Initiates Job Deployment", "gRPC")
+
+Rel(provider, openstack, "Creates Clusters according to ZHM configuration")
+Rel(openstack, kubernetes, "Sets proper clusters")
+
+SHOW_LEGEND()
+@enduml

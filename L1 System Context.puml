@@ -1,0 +1,28 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+AddElementTag("infrastructure", $bgColor="grey", $fontColor="white", $borderColor="darkgrey")
+
+Person(buildingOwner, "Building Owner", "Building Owner")
+Person(energyOperator, "Energy Management", "Optimises the energy consumption and transition")
+
+System(ems, "Energy Management System", "Manages the Energy of the building housing the data center")
+System(dcim, "DCIM", "Data Center Infrastructure Management")
+
+System(ecoQube, "ECO-Qube data center management", "Allows customers to view renderings and create new renderings")
+
+System(hypervisor, "Hypervisor (OpenStack)", "Manages the Virtual Nodes and Clusters", $tags="infrastructure")
+System(clusters, "Cluster(s)", "Zonal Worker Clusters, where the workloads are executed", $tags="infrastructure")
+
+Rel(buildingOwner, ecoQube, "Configures Heat Demand and Desired Electric Load Curve")
+Rel(energyOperator, ecoQube, "Uses Metrics from the system to optimise scheduling and allocation algorithms")
+
+Rel(ems, ecoQube, "Command and Control flow to adjust load curve in real-time")
+Rel(dcim, ecoQube, "Reports Physical Data and Inventory of the Data Center")
+
+Rel(ecoQube, hypervisor, "Uses DCIM information to set up the clusters")
+Rel(ecoQube, clusters, "Selects the right clusters and executes workloads respectively")
+
+SHOW_LEGEND()
+
+@enduml
