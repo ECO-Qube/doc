@@ -15,5 +15,6 @@ build pdf:
     # Runs pandoc on all .md files in the dist folder and outputs them as PDF
     - (cd dist && for f in *.md; do pandoc $f -o $(echo ${f//md/pdf}); done)
   artifacts:
+    expire_in: 1 day
     paths:
       - dist/*.pdf
