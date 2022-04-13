@@ -12,8 +12,8 @@ Person(buildingOwner, "Building Owner", "Building Owner")
 
 Person(energyOperator, "Energy Management", "Optimises the energy consumption and transition")
 
-Container(ems,"EMS / BIMS", "Energy Management System of the building")
-ContainerDb(dataPlatform, "ECO-Qube data platform", "Data Platform for all metrics data etc.")
+Container(ems,"EMS / BEMS", "Energy Management System of the building")
+ContainerDb(dataPlatform, "EDA", "Data Platform for all metrics data etc.")
 
 Container(workflowService, "Workflow service", "Go, gRPC", "Management of workflows", $tags="micro service")
 
@@ -35,6 +35,7 @@ System(authSystem, "Authn & Authz", "Authentication & Authorization", $tags="sup
 System(kubernetes, "Kubernetes", "Workload scheduling and deployment", $tags="supporting services")
 System(openstack, "OpenStack", "Cluster Provisioning and VM provisioning", $tags="supporting services")
 System(dcim, "DCIM", "Data Center Management System", $tags="supporting services")
+System(cooling,"Cooling", "Cools the servers, ensures safe operations")
 
 Rel(buildingOwner, userWebInterface, "Configures the ZHM")
 Rel(energyOperator, userWebInterface, "Gets reporting and optimises algorithms of the ZHM")
@@ -50,7 +51,8 @@ Rel(userWebInterface, authSystem, "Authn & Authz")
 Rel(zonalHeatManagementService, zhmDb, "Stores Cluster Config and report summaries")
 Rel(zonalHeatManagementService, provider, "Instructs to creating clusters", "gRPC")
 Rel(zonalHeatManagementService, schedulerService, "Controls the target workload metrics")
-Rel(ems, zonalHeatManagementService, "Updates Target Load Curve")
+Rel(ems, dataPlatform, "Updates Target Load Curve")
+Rel(zonalHeatManagementService,cooling,"Negotiates Cooling Strategy")
 
 Rel(dataPlatform, ai, "Data for optimisation")
 Rel(ai,schedulerService, "Decisions")
