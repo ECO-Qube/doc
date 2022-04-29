@@ -2,8 +2,6 @@ build pdf:
   image:
     name: pandoc/ubuntu-latex
     entrypoint: [""]
-  only:
-    - main
   before_script:
     - apt-get update
     - DEBIAN_FRONTEND=noninteractive apt-get install --assume-yes --no-install-recommends curl pandoc texlive-latex-base texlive-fonts-recommended texlive-extra-utils texlive-latex-extra
