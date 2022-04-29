@@ -1,0 +1,63 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+AddElementTag("supporting services", $bgColor="grey", $fontColor="white", $borderColor="darkgrey")
+AddElementTag("micro service", $shape=EightSidedShape(), $bgColor="CornflowerBlue", $fontColor="white")
+AddElementTag("storage", $shape=RoundedBoxShape(), $bgColor="lightSkyBlue", $fontColor="white")
+AddElementTag("apiClient", $bgColor="#08267a", $fontColor="white", $borderColor="#073B6F")
+AddElementTag("infrastructure", $bgColor="grey", $fontColor="white", $borderColor="darkgrey")
+
+System(ems,"EMS / BEMS", "Energy Management System of the building")
+
+System(building,"Building")
+
+System_Boundary(loadOptimiser, "Load Control Optimisation") {
+Container(loadHistory, "Load History", "For the base load, so without Top-Up Jobs from the Queue")
+Container(jobQueue, "Job Queue", "Benchmarked Jobs including expected runtime and W/h, static infinite dummies for now")
+    Container(loadPrediction, "Load Prediction", "Predicting Min and Max Load")
+    Container(scheduler, "Scheduler", "Scheduling Workloads, reconciliation adjusts assignments according to the contract with building")
+}
+
+Rel(loadHistory,loadPrediction, "defines Min")
+Rel(jobQueue, loadPrediction, "Defines Max (for now, always 100%)")
+Rel(loadPrediction,building,"Min & Max for 24h, every 15min")
+Rel(building,scheduler,"Target Load Curve for next 24h")
+
+System_Boundary(helio,"Helio") {
+Container(k8s,"Kubernetes")
+Container(reconcile, "Reconcile", "Switches Servers on and off, moves workloads, according to target and strategy")
+Rel(reconcile,k8s,"updates")
+
+Container(sidecar,"EDA Sidecar","EDA Sidecar")
+Rel(k8s,sidecar,"Reports Metrics")
+}
+
+System(dcim,"DCIM","DCIM")
+Rel(dcim,sidecar,"Reports Infrastructure Stuff")
+
+System(zhm, "ZHM", "Zonal heat management")
+Rel(zhm,reconcile,"provide assignement strategy")
+
+System_Boundary(edaSystem,"EDA System") {
+Container(eda,"EDA","Knows Embedded Carbon, Electricity Carbon, Electric consumption per Pod, Resource usage per Pod, HW info")
+Container(edap,"EDA Prometheus")
+Container(statApi, "Statistics API")
+}
+
+System(infra,"infrastructure","Infrastructure stuff")
+Rel(sidecar,eda,"Report Metrics")
+Rel(k8s,infra,"Rolls out")
+
+
+Rel(scheduler,k8s,"Deploys Workloads")
+Rel(k8s,loadPrediction,"Current Utilisation Metrics grouped by Min and Top-Up")
+Rel(eda,loadPrediction,"Current Energy Metrics")
+
+Rel(eda,edap,"Storage")
+Rel(edap, ems, "Dashboard Data, KPIs")
+Rel(statApi,edap,"Fetches Stats","promQL")
+Rel(statApi,jobQueue, "Updates Benchmarks and W/h")
+
+
+SHOW_LEGEND()
+@enduml
